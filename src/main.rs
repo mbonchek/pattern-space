@@ -2,6 +2,7 @@
 
 use rocket::serde::{Deserialize, Serialize, json::Json};
 use rocket::fs::{FileServer, relative};
+use rocket::Config;
 
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
@@ -42,7 +43,12 @@ fn engage(request: Json<CoordinateRequest>) -> Json<CoordinateResponse> {
 
 #[launch]
 fn rocket() -> _ {
+    let config = Config::figment()
+        .merge(("address", "0.0.0.0"))
+        .merge(("port", 10000));
+        
     rocket::build()
+        .configure(config)
         .mount("/", routes![engage])
         .mount("/", FileServer::from(relative!("static")))
 }
