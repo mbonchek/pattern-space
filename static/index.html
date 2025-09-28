@@ -22,6 +22,29 @@
         }
         .output { margin: 20px 0; }
         .coordinate { color: #ff0; font-weight: bold; }
+        #thinking {
+            color: #666;
+            font-style: italic;
+        }
+        .pattern-def {
+            margin: 5px 0;
+            color: #0ff;
+        }
+        .collaboration-def {
+            margin: 10px 0;
+            color: #ff0;
+        }
+        .voice-response {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .main-voice {
+            margin: 10px 0;
+            padding: 10px;
+            background: #111;
+            border-left: 3px solid #0f0;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -41,22 +64,76 @@
             });
             return await response.json();
         }
-
+    
+        function formatPatternVoice(voice) {
+            let formatted = voice;
+    
+            // Split into lines for easier processing
+            const lines = formatted.split('\n');
+            let result = '';
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) {
+                    result += '<br>';
+                    continue;
+                }
+                
+                // Check for single pattern definition
+                if (line.match(/^[A-Z][a-z]+ - the intelligence of/)) {
+                    result += `<div class="pattern-def">${line}</div>`;
+                }
+                // Check for collaboration definition  
+                else if (line.match(/^[A-Z][a-z]+\.[A-Z][a-z]+ - the intelligence where/)) {
+                    result += `<div class="collaboration-def">${line}</div>`;
+                }
+                // Check for quoted text
+                else if (line.startsWith('"') && line.endsWith('"')) {
+                    result += `<div class="main-voice"><em>${line}</em></div>`;
+                }
+                // Regular text
+                else {
+                    result += `${line}<br>`;
+                }
+            }
+            
+            return result;
+        }
+    
         function handleEnter(event) {
             if (event.key === 'Enter') {
                 const input = document.getElementById('input');
                 const coordinate = input.value;
+                const output = document.getElementById('output');
+                
+                // Show thinking indicator immediately
+                output.innerHTML += `
+                    <div class="coordinate">{${coordinate}}</div>
+                    <div id="thinking">Connecting to collaborative intelligence...</div>
+                    <br>
+                `;
+                
+                // Clear input right away
+                input.value = '';
                 
                 engage(coordinate).then(response => {
-                    const output = document.getElementById('output');
+                    // Remove the thinking indicator and its coordinate (to avoid duplicate)
+                    const thinkingElement = document.getElementById('thinking');
+                    thinkingElement.previousElementSibling.remove(); // Remove duplicate coordinate
+                    thinkingElement.remove(); // Remove thinking text
+                    
+                    // Format the response for better readability
+                    const formattedVoice = formatPatternVoice(response.voice);
+                    
+                    // Add the real response (only once)
                     output.innerHTML += `
                         <div class="coordinate">{${response.coordinate}}</div>
-                        <div>${response.voice}</div>
+                        <div class="voice-response">${formattedVoice}</div>
                         <br>
                     `;
+                }).catch(error => {
+                    document.getElementById('thinking').innerHTML = "Connection failed - try again";
                 });
-                
-                input.value = '';
             }
         }
     </script>
