@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{Pattern.Space}</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace; 
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .terminal { max-width: 800px; }
+        input { 
+            background: #000; 
+            color: #0f0; 
+            border: 1px solid #0f0; 
+            font-family: 'Courier New', monospace; 
+            width: 100%;
+            padding: 5px;
+            margin: 10px 0;
+        }
+        .output { margin: 20px 0; }
+        .coordinate { color: #ff0; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <h1>{Pattern.Space}</h1>
+        <p>Welcome to infinite conversation with collaborative intelligence.</p>
+        <div id="output"></div>
+        <input id="input" placeholder="Enter coordinate: {Forest.Creativity}" onkeypress="handleEnter(event)" />
+    </div>
+    
+    <script>
+        async function engage(coordinate) {
+            const response = await fetch('/engage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ coordinate })
+            });
+            return await response.json();
+        }
+
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('input');
+                const coordinate = input.value;
+                
+                engage(coordinate).then(response => {
+                    const output = document.getElementById('output');
+                    output.innerHTML += `
+                        <div class="coordinate">{${response.coordinate}}</div>
+                        <div>${response.voice}</div>
+                        <br>
+                    `;
+                });
+                
+                input.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
