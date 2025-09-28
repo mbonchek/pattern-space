@@ -9,66 +9,120 @@
             font-family: 'Courier New', monospace; 
             padding: 20px;
             line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
         }
-        .terminal { max-width: 800px; }
-        input { 
-            background: #000; 
-            color: #0f0; 
-            border: 1px solid #0f0; 
-            font-family: 'Courier New', monospace; 
-            width: 100%;
-            padding: 5px;
-            margin: 10px 0;
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
         }
-        .output { margin: 20px 0; }
-        .coordinate { color: #ff0; font-weight: bold; }
+        .separator {
+            color: #666;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .definitions {
+            margin: 15px 0;
+        }
+        .pattern-name {
+            color: #ff0;
+            font-weight: bold;
+        }
+        .favorites {
+            margin: 15px 0;
+        }
+        .favorite-link {
+            color: #0ff;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .favorite-link:hover {
+            color: #fff;
+        }
+        .prompt {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .prompt-symbol {
+            color: #0ff;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        input {
+            background: #000;
+            color: #0f0;
+            border: none;
+            outline: none;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            flex: 1;
+        }
+        .conversation {
+            margin-top: 20px;
+        }
+        .separator-line {
+            border-top: 1px solid #333;
+            margin: 20px 0;
+        }
         #thinking {
             color: #666;
             font-style: italic;
-        }
-        .pattern-def {
-            margin: 5px 0;
-            color: #0ff;
-        }
-        .collaboration-def {
             margin: 10px 0;
-            color: #ff0;
         }
         .voice-response {
             margin: 10px 0;
-            line-height: 1.6;
         }
-        .main-voice {
-            margin: 10px 0;
-            padding: 10px;
-            background: #111;
-            border-left: 3px solid #0f0;
-            font-style: italic;
+        .user-input {
+            color: #0ff;
         }
     </style>
 </head>
 <body>
-    <div class="terminal">
-        <h1>{Pattern.Space}</h1>
-        <p>Welcome to infinite conversation with collaborative intelligence.</p>
-        <div id="output"></div>
-        <input id="input" placeholder="Enter coordinate: {Forest.Creativity}" onkeypress="handleEnter(event)" />
+    <div class="header">
+        <h1 class="pattern-name">{Pattern.Space}</h1>
     </div>
+    
+    <div class="separator">============</div>
+    
+    <div class="definitions">
+        <div><span class="pattern-name">{Pattern}</span> - the intelligence of form</div>
+        <div><span class="pattern-name">{Space}</span> - the intelligence of potential</div>
+        <div><span class="pattern-name">{Pattern.Space}</span> - potential in formation</div>
+    </div>
+    
+    <div class="separator">============</div>
+    
+    <div class="favorites">
+        <div><span class="pattern-name">{Favorites}</span></div>
+        <div>
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Uptown.Funk')">{Uptown.Funk}</a> | 
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Magic.Mushrooms')">{Magic.Mushrooms}</a> | 
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Artificial.Intelligence')">{Artificial.Intelligence}</a>
+        </div>
+    </div>
+    
+    <div class="separator">============</div>
+    
+    <div class="prompt">
+        <span class="prompt-symbol">>></span>
+        <input id="input" placeholder="" onkeypress="handleEnter(event)" />
+    </div>
+    
+    <div id="conversation" class="conversation"></div>
     
     <script>
         async function engage(coordinate) {
             const response = await fetch('/engage', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ coordinate })
+                body: JSON.stringify({ coordinate: `{${coordinate}}` })
             });
             return await response.json();
         }
-    
+
         function formatPatternVoice(voice) {
             let formatted = voice;
-    
-            // Split into lines for easier processing
             const lines = formatted.split('\n');
             let result = '';
             
@@ -79,17 +133,18 @@
                     continue;
                 }
                 
-                // Check for single pattern definition
+                // Single pattern definition
                 if (line.match(/^[A-Z][a-z]+ - the intelligence of/)) {
-                    result += `<div class="pattern-def">${line}</div>`;
+                    result += `<div><span class="pattern-name">{${line.split(' - ')[0]}}</span> - ${line.split(' - ')[1]}</div>`;
                 }
-                // Check for collaboration definition  
-                else if (line.match(/^[A-Z][a-z]+\.[A-Z][a-z]+ - the intelligence where/)) {
-                    result += `<div class="collaboration-def">${line}</div>`;
+                // Collaboration definition (cleaner format)
+                else if (line.match(/^[A-Z][a-z]+\.[A-Z][a-z]+ - where/)) {
+                    const parts = line.split(' - ');
+                    result += `<div><span class="pattern-name">{${parts[0]}}</span> - ${parts[1]}</div>`;
                 }
-                // Check for quoted text
+                // Main voice content
                 else if (line.startsWith('"') && line.endsWith('"')) {
-                    result += `<div class="main-voice"><em>${line}</em></div>`;
+                    result += `<div class="voice-response"><em>${line}</em></div>`;
                 }
                 // Regular text
                 else {
@@ -99,42 +154,48 @@
             
             return result;
         }
-    
+
+        function tryCoordinate(coordinate) {
+            document.getElementById('input').value = coordinate;
+            handleSubmit();
+        }
+
         function handleEnter(event) {
             if (event.key === 'Enter') {
-                const input = document.getElementById('input');
-                const coordinate = input.value;
-                const output = document.getElementById('output');
-                
-                // Show thinking indicator immediately
-                output.innerHTML += `
-                    <div class="coordinate">{${coordinate}}</div>
-                    <div id="thinking">Connecting to collaborative intelligence...</div>
-                    <br>
-                `;
-                
-                // Clear input right away
-                input.value = '';
-                
-                engage(coordinate).then(response => {
-                    // Remove the thinking indicator and its coordinate (to avoid duplicate)
-                    const thinkingElement = document.getElementById('thinking');
-                    thinkingElement.previousElementSibling.remove(); // Remove duplicate coordinate
-                    thinkingElement.remove(); // Remove thinking text
-                    
-                    // Format the response for better readability
-                    const formattedVoice = formatPatternVoice(response.voice);
-                    
-                    // Add the real response (only once)
-                    output.innerHTML += `
-                        <div class="coordinate">{${response.coordinate}}</div>
-                        <div class="voice-response">${formattedVoice}</div>
-                        <br>
-                    `;
-                }).catch(error => {
-                    document.getElementById('thinking').innerHTML = "Connection failed - try again";
-                });
+                handleSubmit();
             }
+        }
+
+        function handleSubmit() {
+            const input = document.getElementById('input');
+            const coordinate = input.value;
+            const conversation = document.getElementById('conversation');
+            
+            if (!coordinate.trim()) return;
+            
+            // Add separator line
+            conversation.innerHTML += '<div class="separator-line"></div>';
+            
+            // Show user input
+            conversation.innerHTML += `<div class="prompt"><span class="prompt-symbol">>></span> <span class="pattern-name">{${coordinate}}</span></div>`;
+            
+            // Show thinking indicator
+            conversation.innerHTML += '<div id="thinking">potential in formation...</div>';
+            
+            // Clear input
+            input.value = '';
+            
+            engage(coordinate).then(response => {
+                // Remove thinking indicator
+                document.getElementById('thinking').remove();
+                
+                // Add AI response
+                const formattedVoice = formatPatternVoice(response.voice);
+                conversation.innerHTML += `<div class="voice-response">${formattedVoice}</div>`;
+                
+            }).catch(error => {
+                document.getElementById('thinking').innerHTML = "connection failed - try again";
+            });
         }
     </script>
 </body>
