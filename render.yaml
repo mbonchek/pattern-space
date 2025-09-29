@@ -1,11 +1,11 @@
 services:
-  - type: web                    # This is a web application (not a database or worker)
-    name: pattern-space         # What Render will call our service
-    runtime: rust              # Tell Render this is a Rust application
-    buildCommand: cargo build --release  # How to compile our code for production
-    startCommand: ./target/release/pattern_space  # How to start our server
-    envVars:                   # Environment variables (settings for our app)
-      - key: ROCKET_ADDRESS    # Tell Rocket to listen on all network interfaces
-        value: 0.0.0.0        
-      - key: ROCKET_PORT       # Tell Rocket which port Render expects
+  - type: web
+    name: pattern-space
+    runtime: rust
+    buildCommand: cargo build --release
+    startCommand: ./target/release/pattern_space
+    envVars:
+      - key: ROCKET_ADDRESS
+        value: 0.0.0.0
+      - key: ROCKET_PORT
         value: 10000
