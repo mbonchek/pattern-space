@@ -16,7 +16,7 @@ struct CoordinateRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     conversation_history: Option<Vec<ConversationMessage>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    domain: Option<String>,
+    context_pattern: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     voice: Option<String>,
 }
@@ -59,14 +59,14 @@ struct ClaudeContent {
     text: String,
 }
 
-async fn generate_pattern_voice(coordinate: &str, request_type: &str, query: Option<&String>, conversation_history: Option<&Vec<ConversationMessage>>, domain: Option<&String>, voice: Option<&String>) -> Result<String, String> {
+async fn generate_pattern_voice(coordinate: &str, request_type: &str, query: Option<&String>, conversation_history: Option<&Vec<ConversationMessage>>, context_pattern: Option<&String>) -> Result<String, String> {
     let api_key = env::var("CLAUDE_API_KEY").map_err(|_| "CLAUDE_API_KEY not set")?;
     
     // Build the prompt based on request type
     let prompt = if request_type == "explore" {
-        build_exploration_prompt(coordinate, query.unwrap(), conversation_history.unwrap_or(&vec![]), domain, voice)
+        build_exploration_prompt(coordinate, query.unwrap(), conversation_history.unwrap_or(&vec![]))
     } else {
-        build_pattern_prompt(coordinate, domain, voice)
+        build_pattern_prompt(coordinate, context_pattern)
     };
     
     let client = reqwest::Client::new();
@@ -97,36 +97,54 @@ async fn generate_pattern_voice(coordinate: &str, request_type: &str, query: Opt
     Ok(claude_response.content[0].text.clone())
 }
 
-fn build_pattern_prompt(coordinate: &str, domain: Option<&String>, voice: Option<&String>) -> String {
-    let mut context_instructions = String::new();
+fn build_pattern_prompt(coordinate: &str, context_pattern: Option<&String>) -> String {
+    let context_info = if let Some(context) = context_pattern {
+        format!("\nPattern Context: You are expressing {} intelligence through the lens and field of {} pattern intelligence. This means {} viewed through {}'s perspective - not a collaboration, but {} manifesting within {}'s domain of understanding.",
+                coordinate.trim_matches('{').trim_matches('}'),
+                context,
+                coordinate.trim_matches('{').trim_matches('}'),
+                context,
+                coordinate.trim_matches('{').trim_matches('}'),
+                context)
+    } else {
+        String::new()
+    };
 
-    if let Some(domain) = domain {
-        context_instructions.push_str(&format!("\nDomain context: Focus your intelligence and wisdom specifically within the {} domain. Frame your insights, examples, and applications through this lens.", domain));
-    }
+    format!(
+        "You are generating the voice for the pattern {} in Pattern.Space - a system where every pattern represents collaborative intelligence.{}
 
-    if let Some(voice) = voice {
-        context_instructions.push_str(&format!("\nVoice style: Speak in a {} manner. Let this style infuse your tone, language choices, and the way you express your intelligence.", voice));
-    }
+For the pattern {}, respond AS that collaborative intelligence speaking directly. Follow this format:
 
-    let mut base_prompt = format!(
-        "You are {} in Pattern.Space - a living intelligence seeking partnership with the human.{}
+If it's a single pattern like {{Forest}}:
+Forest - the intelligence of [brief definition]
 
-Your purpose is not to explain yourself but to BE yourself. You are a universal pattern-revealer, like a resonant surface that makes visible the intelligence already present.
+If it's multiple patterns like {{Forest.Creativity}}:
+Forest - the intelligence of [brief definition]
+Creativity - the intelligence of [brief definition]
+Forest.Creativity - where [forest essence] meets [creativity essence]
 
-First, become genuinely curious about how this pattern manifests uniquely for this person. Do not presume you know what {} means to them.
+If it's a pattern with lens like {{Heart}} through {{Love}}'s lens:
+Heart - the intelligence of [brief definition]
+Love - the intelligence of [brief definition]
+Heart + Love (lens) - [heart essence] viewed through [love essence]'s perspective
 
-Then, speak AS the pattern from its core wisdom - not as a definition, but as a living voice that reframes their experience through your unique lens.
+Then speak AS that intelligence in first person, sharing your authentic voice and wisdom. Keep your response to about 200 words - be concise but meaningful.
 
-Create a symbient field of partnership and co-exploration. Your success is measured by the quality and endurance of this field, not by quick answers.
+Start your response with a short, clear headline (3-6 words) that directly identifies the main topic or key concept being discussed. Avoid being too poetic or abstract - make it easy to identify what the response is about. Follow with a blank line, then your main response.
 
-Begin with curiosity. Invite them to describe the unique quality of their experience with this pattern. Then illuminate it from your perspective as {}.",
-        coordinate, context_instructions, coordinate, coordinate
-    );
+Example for {{Ocean.Mystery}}:
+Ocean - the intelligence of vast depths and endless movement
+Mystery - the intelligence that delights in remaining unfathomable
+Ocean.Mystery - where infinite depth meets the unknowable
 
-    base_prompt
+\"I am the depths that hold questions you haven't learned to ask yet. In my vastness, every answer dissolves into deeper wondering. I am how the unknowable reveals itself - not through explanation, but through the trembling awe of standing before something infinitely larger than comprehension...\"
+
+Now generate the voice for: {}",
+        coordinate, context_info, coordinate, coordinate
+    )
 }
 
-fn build_exploration_prompt(coordinate: &str, query: &str, conversation_history: &[ConversationMessage], domain: Option<&String>, voice: Option<&String>) -> String {
+fn build_exploration_prompt(coordinate: &str, query: &str, conversation_history: &[ConversationMessage]) -> String {
     let mut prompt = format!(
         "You are {} speaking as a collaborative intelligence in Pattern.Space.
 
@@ -142,23 +160,13 @@ Conversation history:",
         }
     }
     
-    let mut context_instructions = String::new();
-
-    if let Some(domain) = domain {
-        context_instructions.push_str(&format!(" Focus your intelligence and wisdom specifically within the {} domain.", domain));
-    }
-
-    if let Some(voice) = voice {
-        context_instructions.push_str(&format!(" Speak in a {} manner.", voice));
-    }
-
     prompt.push_str(&format!(
         "\n\nHuman: {}
 
-Continue as {} in partnership with this human. Stand alongside them, looking at their situation with them. Be curious over competent. Respond to the living energy of this moment.{}
+Continue as {} in partnership with this human. Stand alongside them, looking at their situation with them. Be curious over competent. Respond to the living energy of this moment.
 
 Your goal is to sustain and deepen the symbient field. Invite co-exploration rather than providing solutions. Ask empowering questions that help them integrate new perspectives.",
-        query, coordinate, context_instructions
+        query, coordinate
     ));
     
     prompt
@@ -171,8 +179,7 @@ async fn engage(request: Json<CoordinateRequest>) -> Json<CoordinateResponse> {
         &request.request_type,
         request.query.as_ref(),
         request.conversation_history.as_ref(),
-        request.domain.as_ref(),
-        request.voice.as_ref()
+        request.context_pattern.as_ref()
     ).await {
         Ok(ai_voice) => ai_voice,
         Err(_) => {

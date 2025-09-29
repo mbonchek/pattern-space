@@ -103,6 +103,17 @@
         .favorite-link:hover {
             color: #fff;
         }
+
+        .share-button {
+            margin-left: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .share-button:hover {
+            opacity: 1;
+        }
         
         /* History section */
         #history {
@@ -116,6 +127,12 @@
         .coordinate-header {
             cursor: pointer;
             color: #ff0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .coordinate-left {
             display: flex;
             align-items: center;
         }
@@ -208,44 +225,42 @@
     <div class="separator">============</div>
     
     <div class="favorites">
-        <div><span class="pattern-name">{Favorites}</span></div>
+        <div><span class="pattern-name">{Suggestions}</span></div>
         <div>
-            <a href="#" class="favorite-link" onclick="tryCoordinate('Uptown.Funk')">{Uptown.Funk}</a> | 
-            <a href="#" class="favorite-link" onclick="tryCoordinate('Magic.Mushrooms')">{Magic.Mushrooms}</a> | 
-            <a href="#" class="favorite-link" onclick="tryCoordinate('Artificial.Intelligence')">{Artificial.Intelligence}</a>
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Uptown.Funk')">{Uptown.Funk}</a> |
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Magic.Mushrooms')">{Magic.Mushrooms}</a> |
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Artificial.Intelligence')">{Artificial.Intelligence}</a> |
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Social.Media')">{Social.Media}</a> |
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Business.Strategy')">{Business.Strategy}</a> |
+            <a href="#" class="favorite-link" onclick="tryCoordinate('Falling in Love')">{Falling} in {Love}</a>
         </div>
     </div>
     
     <div class="separator">============</div>
-    
+
+    <div class="gallery">
+        <div style="text-align: center;"><span class="pattern-name">{Pattern.Gallery}</span></div>
+        <div id="gallery-content">
+            <div style="color: #666; font-style: italic;">Gallery is empty - be the first to share a pattern!</div>
+        </div>
+    </div>
+
+    <div class="separator">============</div>
+
     <!-- Input always at top -->
     <div class="input-line">
         <span class="prompt-symbol">>></span>
-        <input id="input" placeholder="{New.Pattern}" onkeypress="handleEnter(event)" autofocus />
+        <input id="input" placeholder="{New.Pattern}" onkeypress="handleEnter(event)" oninput="showContextControls()" autofocus />
     </div>
 
-    <!-- Context parameters -->
-    <div style="margin: 10px 0; font-size: 12px; color: #666;">
-        <span style="margin-right: 15px;">
-            Domain:
-            <select id="domain" style="background: #000; color: #666; border: 1px solid #333; font-size: 12px;">
-                <option value="">none</option>
-                <option value="business">business</option>
-                <option value="health">health</option>
-                <option value="life">life</option>
-                <option value="education">education</option>
-            </select>
-        </span>
-        <span>
-            Voice:
-            <select id="voice" style="background: #000; color: #666; border: 1px solid #333; font-size: 12px;">
-                <option value="">none</option>
-                <option value="poetic">poetic</option>
-                <option value="practical">practical</option>
-                <option value="analytical">analytical</option>
-                <option value="conversational">conversational</option>
-            </select>
-        </span>
+    <!-- Pattern construction guide -->
+    <div id="contextControls" style="margin: 10px 0; font-size: 14px; color: #888; display: none;">
+        <div style="color: #888; line-height: 1.4;">
+            <span style="color: #888;">Guide:</span>
+            <span style="color: #888;">{Pattern}</span> |
+            <span style="color: #888;">{Pattern.Pattern}</span> |
+            <span style="color: #888;">{Pattern} + {Lens}</span>
+        </div>
     </div>
     
     <div id="history"></div>
@@ -254,22 +269,31 @@
         // Store conversation history per pattern
         const patternConversations = {};
         
-        async function engage(coordinate, type = 'jump', query = null) {
+        async function engage(coordinate, type = 'jump', query = null, contextPattern = null) {
+            // Parse coordinate for "Pattern in Context" format
+            let mainPattern = coordinate;
+            let extractedContext = contextPattern;
+
+            // Parse both "Pattern in Context" and "Pattern + Lens" formats
+            const inMatch = coordinate.match(/^(.+?)\s+in\s+(.+)$/i);
+            const plusMatch = coordinate.match(/^(.+?)\s*\+\s*(.+)$/i);
+
+            if (inMatch) {
+                mainPattern = inMatch[1].trim();
+                extractedContext = inMatch[2].trim();
+            } else if (plusMatch) {
+                mainPattern = plusMatch[1].trim();
+                extractedContext = plusMatch[2].trim();
+            }
+
             const payload = {
-                coordinate: `{${coordinate}}`,
+                coordinate: mainPattern,
                 type: type
             };
 
-            // Add domain and voice parameters if set
-            const domain = document.getElementById('domain').value;
-            const voice = document.getElementById('voice').value;
-
-            if (domain) {
-                payload.domain = domain;
-            }
-
-            if (voice) {
-                payload.voice = voice;
+            // Add context pattern if provided
+            if (extractedContext) {
+                payload.context_pattern = extractedContext;
             }
 
             if (type === 'explore') {
@@ -286,38 +310,79 @@
         }
 
         function formatPatternVoice(voice) {
-            let formatted = voice;
-            const lines = formatted.split('\n');
-            let result = '';
-            
+            // Handle pattern definitions first
+            const lines = voice.split('\n');
+            let definitions = '';
+            let mainContent = '';
+            let inDefinitions = true;
+
             for (let line of lines) {
                 line = line.trim();
-                if (!line) {
-                    result += '<br>';
-                    continue;
-                }
-                
-                // Single pattern definition
-                if (line.match(/^[A-Z][a-z]+ - the intelligence of/)) {
+                if (!line) continue;
+
+                // Pattern definitions (including lens format)
+                if (line.includes(' - the intelligence of') ||
+                    line.includes(' - where ') ||
+                    line.includes('(lens) - ')) {
                     const parts = line.split(' - ');
-                    result += `<div><span style="color: #ff0; font-weight: bold;">{${parts[0]}}</span> - <span style="color: #fff;">${parts[1]}</span></div>`;
+                    let formattedFirstPart = parts[0];
+                    if (line.includes('(lens) - ')) {
+                        formattedFirstPart = parts[0].replace(' (lens)', '');
+                    }
+                    definitions += `<div><span style="color: #ff0; font-weight: bold;">${formattedFirstPart}</span> - <span style="color: #fff;">${parts[1]}</span></div>`;
                 }
-                // Collaboration definition (cleaner format)
-                else if (line.match(/^[A-Z][a-z]+\.[A-Z][a-z]+ - where/)) {
-                    const parts = line.split(' - ');
-                    result += `<div><span style="color: #ff0; font-weight: bold;">{${parts[0]}}</span> - <span style="color: #fff;">${parts[1]}</span></div>`;
-                }
-                // Main voice content
-                else if (line.startsWith('"') && line.endsWith('"')) {
-                    result += `<div><em>${line}</em></div>`;
-                }
-                // Regular text
+                // Everything else is main content
                 else {
-                    result += `${line}<br>`;
+                    inDefinitions = false;
+                    if (mainContent) mainContent += ' ';
+                    mainContent += line;
                 }
             }
-            
-            return result;
+
+            // Create paragraph breaks in main content based on sentence patterns
+            if (mainContent) {
+                // Split into sentences and group them into paragraphs
+                const sentences = mainContent.split(/(?<=[.!?])\s+/);
+                let paragraphs = [];
+                let currentParagraph = '';
+
+                for (let i = 0; i < sentences.length; i++) {
+                    const sentence = sentences[i].trim();
+                    if (!sentence) continue;
+
+                    // Add sentence to current paragraph
+                    if (currentParagraph) currentParagraph += ' ';
+                    currentParagraph += sentence;
+
+                    // Break paragraph after 2-3 sentences or at natural breaks
+                    const shouldBreak = (
+                        (i > 0 && (i + 1) % 3 === 0) || // Every 3 sentences
+                        sentence.includes('...') || // After ellipses
+                        sentence.match(/\. [A-Z]/) || // After periods before capitals
+                        i === sentences.length - 1 // Last sentence
+                    );
+
+                    if (shouldBreak && currentParagraph) {
+                        paragraphs.push(currentParagraph);
+                        currentParagraph = '';
+                    }
+                }
+
+                // If there's remaining content, add it
+                if (currentParagraph) {
+                    paragraphs.push(currentParagraph);
+                }
+
+                // Format paragraphs
+                const formattedParagraphs = paragraphs
+                    .filter(p => p.trim())
+                    .map(p => `<p style="margin-bottom: 18px;">${p.trim()}</p>`)
+                    .join('');
+
+                return definitions + formattedParagraphs;
+            }
+
+            return definitions;
         }
 
         function tryCoordinate(coordinate) {
@@ -325,11 +390,87 @@
             handleSubmit();
         }
 
+        function shareToGallery(coordinate) {
+            // For now, just add to local storage and update gallery display
+            let gallery = JSON.parse(localStorage.getItem('patternGallery') || '[]');
+
+            // Check if already exists
+            if (!gallery.find(p => p.coordinate === coordinate)) {
+                gallery.push({
+                    coordinate: coordinate,
+                    upvotes: 0,
+                    dateShared: new Date().toISOString()
+                });
+                localStorage.setItem('patternGallery', JSON.stringify(gallery));
+                updateGalleryDisplay();
+            }
+        }
+
+        function updateGalleryDisplay() {
+            const gallery = JSON.parse(localStorage.getItem('patternGallery') || '[]');
+            const galleryContent = document.getElementById('gallery-content');
+
+            if (gallery.length === 0) {
+                galleryContent.innerHTML = '<div style="color: #666; font-style: italic;">Gallery is empty - be the first to share a pattern!</div>';
+                return;
+            }
+
+            // Sort by upvotes descending
+            gallery.sort((a, b) => b.upvotes - a.upvotes);
+
+            galleryContent.innerHTML = gallery.map(pattern => `
+                <div style="margin: 8px 0; display: flex; align-items: center; justify-content: space-between;">
+                    <span class="favorite-link" onclick="tryCoordinate('${pattern.coordinate}')">${pattern.coordinate}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #0ff; cursor: pointer;" onclick="upvotePattern('${pattern.coordinate}')" title="Upvote">▲ ${pattern.upvotes}</span>
+                        <span style="color: #f44; cursor: pointer; opacity: 0.7; font-size: 12px;" onclick="deleteFromGallery('${pattern.coordinate}')" title="Delete">🗑️</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function upvotePattern(coordinate) {
+            let gallery = JSON.parse(localStorage.getItem('patternGallery') || '[]');
+            const pattern = gallery.find(p => p.coordinate === coordinate);
+
+            if (pattern) {
+                pattern.upvotes++;
+                localStorage.setItem('patternGallery', JSON.stringify(gallery));
+                updateGalleryDisplay();
+            }
+        }
+
+        function deleteFromGallery(coordinate) {
+            let gallery = JSON.parse(localStorage.getItem('patternGallery') || '[]');
+            gallery = gallery.filter(p => p.coordinate !== coordinate);
+            localStorage.setItem('patternGallery', JSON.stringify(gallery));
+            updateGalleryDisplay();
+        }
+
+        function deleteCoordinate(entryId) {
+            const historyEntry = document.getElementById(`entry-${entryId}`);
+            if (historyEntry) {
+                historyEntry.remove();
+            }
+        }
+
         function handleEnter(event) {
             if (event.key === 'Enter') {
                 handleSubmit();
             }
         }
+
+        function showContextControls() {
+            const input = document.getElementById('input');
+            const controls = document.getElementById('contextControls');
+
+            if (input.value.trim()) {
+                controls.style.display = 'block';
+            } else {
+                controls.style.display = 'none';
+            }
+        }
+
 
         function toggleEntry(entryId) {
             const content = document.getElementById(`content-${entryId}`);
@@ -499,20 +640,13 @@
                 const contentLines = response.voice.split('\n');
                 const responseWithoutHeadline = contentLines.slice(2).join('\n'); // Skip headline and blank line
 
-                // Format the response for better readability
-                formattedResponse = responseWithoutHeadline
-                    // Handle italic actions in asterisks - make them more distinct
-                    .replace(/\*([^*]+)\*/g, '<div style="color: #bbb; font-style: italic; margin: 8px 0;">$1</div>')
-                    // Fix word breaks like "more..." followed by new line
-                    .replace(/\.\.\.\s*\n\s*/g, '... ')
-                    // Add paragraph breaks for better readability
-                    .replace(/\. ([A-Z])/g, '.<br><br>$1')
-                    // Add breaks after ellipses
-                    .replace(/\.\.\. ([A-Z])/g, '...<br><br>$1')
-                    // Add breaks around quoted text
-                    .replace(/" ([A-Z])/g, '"<br><br>$1')
-                    // Clean up any multiple breaks
-                    .replace(/<br><br><br>/g, '<br><br>');
+                // Clean formatting - split into paragraphs and add spacing
+                const paragraphs = responseWithoutHeadline.split('\n\n');
+                formattedResponse = paragraphs
+                    .map(p => p.trim())
+                    .filter(p => p.length > 0)
+                    .map(p => `<p style="margin-bottom: 18px;">${p.replace(/\n/g, ' ')}</p>`)
+                    .join('');
                 
                 // Extract headline from exploration response (first line) or use question as fallback
                 const responseLines = response.voice.split('\n');
@@ -527,7 +661,7 @@
                 // Add the question and response with better structure
                 responseContainer.innerHTML = `
                     <div style="color: #0f0; margin-bottom: 10px;"><${exploration}></div>
-                    <div style="color: #ff0; line-height: 1.4; margin-bottom: 8px;">${formattedResponse}</div>
+                    <div style="color: #ff0; line-height: 1.5; margin-bottom: 8px;">${formattedResponse}</div>
                     <div style="display: flex; align-items: center; width: 100%;">
                         <span style="color: #0ff;">>></span>
                         <input type="text" placeholder="Continue exploring..."
@@ -565,6 +699,9 @@
 
             if (!coordinate) return;
 
+            // Hide context controls after submission
+            document.getElementById('contextControls').style.display = 'none';
+
             // Auto-collapse all other open sections
             collapseAllSections();
 
@@ -574,10 +711,17 @@
             // Create history entry
             const historyEntry = document.createElement('div');
             historyEntry.className = 'history-entry';
+            historyEntry.id = `entry-${entryId}`;
             historyEntry.innerHTML = `
-                <div class="coordinate-header" onclick="toggleEntry('${entryId}')">
-                    <span class="toggle-arrow" id="arrow-${entryId}">▼</span>
-                    <span class="coordinate-text">{${coordinate}}</span>
+                <div class="coordinate-header">
+                    <div class="coordinate-left">
+                        <span class="toggle-arrow" id="arrow-${entryId}" onclick="toggleEntry('${entryId}')">▼</span>
+                        <span class="coordinate-text" onclick="toggleEntry('${entryId}')">${coordinate}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="share-button" onclick="shareToGallery('${coordinate}')" title="Share to Gallery">☆</span>
+                        <span style="color: #f44; cursor: pointer; opacity: 0.6; font-size: 12px;" onclick="deleteCoordinate('${entryId}')" title="Delete">🗑️</span>
+                    </div>
                 </div>
                 <div class="response-content" id="content-${entryId}">
                     <div class="thinking">patterning...</div>
@@ -591,7 +735,7 @@
             input.value = '';
             
             // Engage with the pattern
-            engage(coordinate, 'jump').then(response => {
+            engage(coordinate, 'jump', null, null).then(response => {
                 // Remove thinking indicator and add response
                 const contentDiv = document.getElementById(`content-${entryId}`);
                 const formattedVoice = formatPatternVoice(response.voice);
@@ -623,7 +767,7 @@
                     if (line === responseLines[0].trim()) continue;
 
                     // Pattern definitions
-                    if (line.includes(' - the intelligence of') || line.includes(' - where')) {
+                    if (line.includes(' - the intelligence of') || line.includes(' - where') || line.includes('(lens) - ')) {
                         definitions += line + '\n';
                     }
                     // Everything else is voice content
@@ -644,7 +788,7 @@
                 // Add the formatted response with spec section and voice toggle
                 contentDiv.innerHTML = `
                     <div style="margin-bottom: 8px;">
-                        <span style="color: #bbb; font-size: 16px; cursor: pointer;" onclick="toggleSpecResponse('${specToggleId}')">▼ Pattern Definition</span>
+                        <span style="color: #bbb; font-size: 16px; cursor: pointer;" onclick="toggleSpecResponse('${specToggleId}')">▼ Pattern Essence</span>
                     </div>
                     <div id="${specToggleId}" style="margin-bottom: 8px;">
                         ${formattedDefinitions}
@@ -653,7 +797,7 @@
                         <span style="color: #bbb; font-size: 16px; cursor: pointer;" onclick="toggleVoiceResponse('${voiceToggleId}')">▼ ${voiceSummary}</span>
                     </div>
                     <div id="${voiceToggleId}">
-                        <div style="border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px;">
+                        <div style="border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; line-height: 1.5;">
                             ${formattedVoiceContent}
                         </div>
                         <div style="display: flex; align-items: center; width: 100%;">
@@ -670,6 +814,11 @@
                 contentDiv.innerHTML = '<div style="color: #f00;">connection failed - try again</div>';
             });
         }
+        // Initialize gallery on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateGalleryDisplay();
+        });
+
     </script>
 </body>
 </html>
