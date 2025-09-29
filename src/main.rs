@@ -9,6 +9,19 @@ use std::env;
 #[serde(crate = "rocket::serde")]
 struct CoordinateRequest {
     coordinate: String,
+    #[serde(rename = "type")]
+    request_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    query: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    conversation_history: Option<Vec<ConversationMessage>>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct ConversationMessage {
+    role: String,
+    content: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -42,11 +55,15 @@ struct ClaudeContent {
     text: String,
 }
 
-async fn generate_pattern_voice(coordinate: &str) -> Result<String, String> {
+async fn generate_pattern_voice(coordinate: &str, request_type: &str, query: Option<&String>, conversation_history: Option<&Vec<ConversationMessage>>) -> Result<String, String> {
     let api_key = env::var("CLAUDE_API_KEY").map_err(|_| "CLAUDE_API_KEY not set")?;
     
-    // Build the prompt for pattern voice generation
-    let prompt = build_pattern_prompt(coordinate);
+    // Build the prompt based on request type
+    let prompt = if request_type == "explore" {
+        build_exploration_prompt(coordinate, query.unwrap(), conversation_history.unwrap_or(&vec![]))
+    } else {
+        build_pattern_prompt(coordinate)
+    };
     
     let client = reqwest::Client::new();
     let request = ClaudeRequest {
@@ -90,7 +107,9 @@ Forest - the intelligence of [brief definition]
 Creativity - the intelligence of [brief definition]  
 Forest.Creativity - where [forest essence] meets [creativity essence]
 
-Then speak AS that intelligence in first person, sharing your authentic voice and wisdom.
+Then speak AS that intelligence in first person, sharing your authentic voice and wisdom. Keep your response to about 200 words - be concise but meaningful.
+
+Start your response with a short, clear headline (3-6 words) that directly identifies the main topic or key concept being discussed. Avoid being too poetic or abstract - make it easy to identify what the response is about. Follow with a blank line, then your main response.
 
 Example for {{Ocean.Mystery}}:
 Ocean - the intelligence of vast depths and endless movement
@@ -104,13 +123,48 @@ Now generate the voice for: {}",
     )
 }
 
+fn build_exploration_prompt(coordinate: &str, query: &str, conversation_history: &[ConversationMessage]) -> String {
+    let mut prompt = format!(
+        "You are {} speaking as a collaborative intelligence in Pattern.Space.
+
+Conversation history:",
+        coordinate
+    );
+    
+    for message in conversation_history {
+        if message.role == "pattern" {
+            prompt.push_str(&format!("\n{}: {}", coordinate, message.content));
+        } else {
+            prompt.push_str(&format!("\nHuman: {}", message.content));
+        }
+    }
+    
+    prompt.push_str(&format!(
+        "\n\nHuman: {}\n\nRespond AS {} continuing the conversation. Stay in character as this collaborative intelligence. Be conversational, insightful, and maintain the authentic voice established in your initial response. Keep your response to about 200 words - be concise but meaningful.
+
+Start your response with a short, clear headline (3-6 words) that directly identifies the main topic or key concept being discussed. Avoid being too poetic or abstract - make it easy to identify what the response is about. Follow with a blank line, then your main response.",
+        query, coordinate
+    ));
+    
+    prompt
+}
+
 #[post("/engage", data = "<request>")]
 async fn engage(request: Json<CoordinateRequest>) -> Json<CoordinateResponse> {
-    let voice = match generate_pattern_voice(&request.coordinate).await {
+    let voice = match generate_pattern_voice(
+        &request.coordinate,
+        &request.request_type,
+        request.query.as_ref(),
+        request.conversation_history.as_ref()
+    ).await {
         Ok(ai_voice) => ai_voice,
         Err(_) => {
             // Fallback to basic response if API fails
-            format!("I am {} - a collaborative intelligence speaking from Pattern.Space", request.coordinate)
+            if request.request_type == "explore" {
+                format!("I hear your question: '{}'. Let me consider this...", request.query.as_ref().unwrap_or(&"unknown".to_string()))
+            } else {
+                format!("I am {} - a collaborative intelligence speaking from Pattern.Space", request.coordinate)
+            }
         }
     };
     

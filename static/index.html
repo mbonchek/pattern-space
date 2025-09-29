@@ -3,14 +3,66 @@
 <head>
     <title>{Pattern.Space}</title>
     <style>
-        body { 
-            background: #000; 
-            color: #ff0; 
-            font-family: 'Courier New', monospace; 
+        body {
+            background: #000;
+            color: #ff0;
+            font-family: 'Courier New', monospace;
             padding: 20px;
             line-height: 1.6;
             max-width: 600px;
             margin: 0 auto;
+            font-size: 16px;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 12px;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .definition-line {
+                flex-direction: column;
+                align-items: flex-start;
+                max-width: 100%;
+                margin: 6px 0;
+            }
+            
+            .definition-text {
+                margin-left: 10px;
+                margin-top: 2px;
+                font-size: 11px;
+            }
+            
+            .favorites {
+                font-size: 10px;
+            }
+            
+            .favorite-link {
+                display: inline-block;
+                margin: 2px 0;
+            }
+            
+            input {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .response-content {
+                margin-left: 16px;
+                font-size: 11px;
+            }
+            
+            .coordinate-text {
+                font-size: 12px;
+            }
+            
+            .prompt-symbol {
+                font-size: 12px;
+            }
         }
         .header {
             text-align: center;
@@ -24,12 +76,24 @@
         .definitions {
             margin: 15px 0;
         }
+        .definition-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .definition-text {
+            color: #ff0;
+        }
         .pattern-name {
             color: #0f0;
             font-weight: bold;
         }
         .favorites {
             margin: 15px 0;
+            text-align: center;
         }
         .favorite-link {
             color: #0ff;
@@ -39,16 +103,64 @@
         .favorite-link:hover {
             color: #fff;
         }
-        .prompt {
-            margin-top: 15px;
+        
+        /* History section */
+        #history {
+            margin-top: 20px;
+        }
+        
+        .history-entry {
+            margin: 15px 0;
+        }
+        
+        .coordinate-header {
+            cursor: pointer;
+            color: #ff0;
             display: flex;
             align-items: center;
         }
+        
+        .coordinate-header:hover {
+            color: #fff;
+        }
+        
+        .toggle-arrow {
+            color: #0ff;
+            margin-right: 8px;
+            font-size: 16px;
+            user-select: none;
+        }
+        
+        .coordinate-text {
+            color: #0f0;
+            font-weight: bold;
+        }
+        
+        .response-content {
+            margin-left: 24px;
+            margin-top: 8px;
+            color: #ff0;
+        }
+        
+        .response-content.hidden {
+            display: none;
+        }
+        
+        /* Input section at top */
+        .input-line {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+        }
+        
         .prompt-symbol {
             color: #0ff;
             margin-right: 10px;
             font-weight: bold;
         }
+        
         input {
             background: #000;
             color: #ff0;
@@ -58,23 +170,16 @@
             font-size: 16px;
             flex: 1;
         }
-        .conversation {
-            margin-top: 20px;
+
+        input::placeholder {
+            color: #999;
         }
-        .separator-line {
-            border-top: 1px solid #333;
-            margin: 20px 0;
-        }
-        #thinking {
-            color: #666;
+        
+        .thinking {
+            color: #bbb;
             font-style: italic;
-            margin: 10px 0;
-        }
-        .voice-response {
-            margin: 10px 0;
-        }
-        .user-input {
-            color: #0ff;
+            margin-left: 24px;
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -86,9 +191,18 @@
     <div class="separator">============</div>
     
     <div class="definitions">
-        <div><span class="pattern-name">{Pattern}</span> - the intelligence of form</div>
-        <div><span class="pattern-name">{Space}</span> - the intelligence of potential</div>
-        <div><span class="pattern-name">{Pattern.Space}</span> - potential in formation</div>
+        <div class="definition-line">
+            <span class="pattern-name">{Pattern}</span>
+            <span class="definition-text">the intelligence of form</span>
+        </div>
+        <div class="definition-line">
+            <span class="pattern-name">{Space}</span>
+            <span class="definition-text">the intelligence of potential</span>
+        </div>
+        <div class="definition-line">
+            <span class="pattern-name">{Pattern.Space}</span>
+            <span class="definition-text">potential in formation</span>
+        </div>
     </div>
     
     <div class="separator">============</div>
@@ -104,19 +218,33 @@
     
     <div class="separator">============</div>
     
-    <div class="prompt">
+    <!-- Input always at top -->
+    <div class="input-line">
         <span class="prompt-symbol">>></span>
-        <input id="input" placeholder="" onkeypress="handleEnter(event)" />
+        <input id="input" placeholder="{New.Pattern}" onkeypress="handleEnter(event)" autofocus />
     </div>
     
-    <div id="conversation" class="conversation"></div>
+    <div id="history"></div>
     
     <script>
-        async function engage(coordinate) {
+        // Store conversation history per pattern
+        const patternConversations = {};
+        
+        async function engage(coordinate, type = 'jump', query = null) {
+            const payload = {
+                coordinate: `{${coordinate}}`,
+                type: type
+            };
+            
+            if (type === 'explore') {
+                payload.query = query;
+                payload.conversation_history = patternConversations[coordinate] || [];
+            }
+            
             const response = await fetch('/engage', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ coordinate: `{${coordinate}}` })
+                body: JSON.stringify(payload)
             });
             return await response.json();
         }
@@ -135,16 +263,17 @@
                 
                 // Single pattern definition
                 if (line.match(/^[A-Z][a-z]+ - the intelligence of/)) {
-                    result += `<div><span class="pattern-name">{${line.split(' - ')[0]}}</span> - ${line.split(' - ')[1]}</div>`;
+                    const parts = line.split(' - ');
+                    result += `<div><span style="color: #ff0; font-weight: bold;">{${parts[0]}}</span> - <span style="color: #fff;">${parts[1]}</span></div>`;
                 }
                 // Collaboration definition (cleaner format)
                 else if (line.match(/^[A-Z][a-z]+\.[A-Z][a-z]+ - where/)) {
                     const parts = line.split(' - ');
-                    result += `<div><span class="pattern-name">{${parts[0]}}</span> - ${parts[1]}</div>`;
+                    result += `<div><span style="color: #ff0; font-weight: bold;">{${parts[0]}}</span> - <span style="color: #fff;">${parts[1]}</span></div>`;
                 }
                 // Main voice content
                 else if (line.startsWith('"') && line.endsWith('"')) {
-                    result += `<div class="voice-response"><em>${line}</em></div>`;
+                    result += `<div><em>${line}</em></div>`;
                 }
                 // Regular text
                 else {
@@ -166,45 +295,343 @@
             }
         }
 
+        function toggleEntry(entryId) {
+            const content = document.getElementById(`content-${entryId}`);
+            const arrow = document.getElementById(`arrow-${entryId}`);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                arrow.textContent = '▼';
+            } else {
+                content.classList.add('hidden');
+                arrow.textContent = '▶';
+            }
+        }
+
+        function toggleExplorationResponse(timestamp) {
+            const responseDiv = document.getElementById(`response-${timestamp}`);
+            const toggleSpan = document.querySelector(`span[onclick*="${timestamp}"]`);
+
+            console.log('Toggle clicked, responseDiv:', responseDiv, 'current display:', responseDiv.style.display);
+
+            // Extract the summary from current text (everything after arrow)
+            const currentText = toggleSpan.innerHTML;
+            const summary = currentText.replace(/^[▼▶]\s*/, '');
+
+            // Check current state - if style.display is empty, it's visible
+            const isHidden = responseDiv.style.display === 'none';
+
+            if (isHidden) {
+                responseDiv.style.display = 'block';
+                toggleSpan.innerHTML = `▼ ${summary}`;
+            } else {
+                responseDiv.style.display = 'none';
+                toggleSpan.innerHTML = `▶ ${summary}`;
+            }
+        }
+
+        function toggleVoiceResponse(voiceId) {
+            const voiceDiv = document.getElementById(voiceId);
+            const toggleSpan = document.querySelector(`span[onclick*="${voiceId}"]`);
+
+            // Extract the summary from current text (everything after arrow)
+            const currentText = toggleSpan.innerHTML;
+            const summary = currentText.replace(/^[▼▶]\s*/, '');
+
+            if (voiceDiv.style.display === 'none') {
+                voiceDiv.style.display = 'block';
+                toggleSpan.innerHTML = `▼ ${summary}`;
+            } else {
+                voiceDiv.style.display = 'none';
+                toggleSpan.innerHTML = `▶ ${summary}`;
+            }
+        }
+
+        function toggleSpecResponse(specId) {
+            const specDiv = document.getElementById(specId);
+            const toggleSpan = document.querySelector(`span[onclick*="${specId}"]`);
+
+            if (specDiv.style.display === 'none') {
+                specDiv.style.display = 'block';
+                toggleSpan.innerHTML = '▼ Pattern Definition';
+            } else {
+                specDiv.style.display = 'none';
+                toggleSpan.innerHTML = '▶ Pattern Definition';
+            }
+        }
+
+        function collapseAllSections() {
+            // Collapse all spec sections
+            const specSections = document.querySelectorAll('div[id^="spec-"]');
+            specSections.forEach(section => {
+                if (section.style.display !== 'none') {
+                    section.style.display = 'none';
+                    const toggleSpan = document.querySelector(`span[onclick*="${section.id}"]`);
+                    if (toggleSpan) {
+                        toggleSpan.innerHTML = '▶ Pattern Definition';
+                    }
+                }
+            });
+
+            // Collapse all voice sections
+            const voiceSections = document.querySelectorAll('div[id^="voice-"]');
+            voiceSections.forEach(section => {
+                if (section.style.display !== 'none') {
+                    section.style.display = 'none';
+                    const toggleSpan = document.querySelector(`span[onclick*="${section.id}"]`);
+                    if (toggleSpan) {
+                        const summary = toggleSpan.innerHTML.replace(/^[▼▶]\s*/, '');
+                        toggleSpan.innerHTML = `▶ ${summary}`;
+                    }
+                }
+            });
+
+            // Collapse all exploration sections
+            const explorationSections = document.querySelectorAll('div[id^="response-"]');
+            explorationSections.forEach(section => {
+                if (section.style.display !== 'none') {
+                    section.style.display = 'none';
+                    const timestamp = section.id.replace('response-', '');
+                    const toggleSpan = document.querySelector(`span[onclick*="${timestamp}"]`);
+                    if (toggleSpan) {
+                        const summary = toggleSpan.innerHTML.replace(/^[▼▶]\s*/, '');
+                        toggleSpan.innerHTML = `▶ ${summary}`;
+                    }
+                }
+            });
+        }
+
+        function handleExploration(basePattern, exploration, event) {
+            console.log('handleExploration called:', {basePattern, exploration});
+            if (!exploration.trim()) return;
+
+            // Auto-collapse all other open sections
+            collapseAllSections();
+
+            // Clear the input
+            event.target.value = '';
+
+            // Add user query to conversation history
+            if (!patternConversations[basePattern]) {
+                patternConversations[basePattern] = [];
+            }
+            patternConversations[basePattern].push({
+                role: 'user',
+                content: exploration
+            });
+
+            // Find the content div for this pattern
+            const contentDiv = event.target.closest('.response-content') || event.target.closest('div[id^="content-"]');
+            console.log('Found contentDiv:', contentDiv);
+            
+            // Add thinking indicator
+            const timestamp = Date.now();
+            const explorationDiv = document.createElement('div');
+            explorationDiv.innerHTML = `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333;">
+                    <div style="margin-bottom: 8px;">
+                        <span style="color: #bbb; font-size: 16px; cursor: pointer;" onclick="toggleExplorationResponse('${timestamp}')">▼ ...</span>
+                    </div>
+                    <div id="response-${timestamp}" style="margin-top: 8px;">
+                        <div style="color: #0f0; margin-bottom: 8px;"><${exploration}></div>
+                        <div style="color: #bbb; font-style: italic;">patterning...</div>
+                    </div>
+                </div>
+            `;
+            contentDiv.appendChild(explorationDiv);
+            
+            // Call explore API
+            console.log('Sending exploration request:', {
+                coordinate: basePattern,
+                type: 'explore', 
+                query: exploration,
+                conversation_history: patternConversations[basePattern] || []
+            });
+            
+            engage(basePattern, 'explore', exploration).then(response => {
+                console.log('Exploration response:', response);
+                
+                // Clear the entire response container and rebuild it
+                const responseContainer = document.getElementById(`response-${timestamp}`);
+                responseContainer.innerHTML = ``;
+                
+                // Add pattern response with better formatting
+                const responseDiv = document.createElement('div');
+                let formattedResponse = response.voice;
+                
+                // Remove the headline from the main content (it's already in the toggle)
+                const contentLines = response.voice.split('\n');
+                const responseWithoutHeadline = contentLines.slice(2).join('\n'); // Skip headline and blank line
+
+                // Format the response for better readability
+                formattedResponse = responseWithoutHeadline
+                    // Handle italic actions in asterisks - make them more distinct
+                    .replace(/\*([^*]+)\*/g, '<div style="color: #bbb; font-style: italic; margin: 8px 0;">$1</div>')
+                    // Fix word breaks like "more..." followed by new line
+                    .replace(/\.\.\.\s*\n\s*/g, '... ')
+                    // Add paragraph breaks for better readability
+                    .replace(/\. ([A-Z])/g, '.<br><br>$1')
+                    // Add breaks after ellipses
+                    .replace(/\.\.\. ([A-Z])/g, '...<br><br>$1')
+                    // Add breaks around quoted text
+                    .replace(/" ([A-Z])/g, '"<br><br>$1')
+                    // Clean up any multiple breaks
+                    .replace(/<br><br><br>/g, '<br><br>');
+                
+                // Extract headline from exploration response (first line) or use question as fallback
+                const responseLines = response.voice.split('\n');
+                const responseSummary = responseLines[0].trim() || exploration.split(' ').slice(0, 6).join(' ') + '...';
+
+                // Update the toggle with the response summary
+                const toggleSpan = document.querySelector(`span[onclick*="${timestamp}"]`);
+                if (toggleSpan) {
+                    toggleSpan.innerHTML = `▼ ${responseSummary}`;
+                }
+
+                // Add the question and response with better structure
+                responseContainer.innerHTML = `
+                    <div style="color: #0f0; margin-bottom: 10px;"><${exploration}></div>
+                    <div style="color: #ff0; line-height: 1.4; margin-bottom: 8px;">${formattedResponse}</div>
+                    <div style="display: flex; align-items: center; width: 100%;">
+                        <span style="color: #0ff;">>></span>
+                        <input type="text" placeholder="Continue exploring..."
+                               onkeypress="if(event.key==='Enter') handleExploration('${basePattern}', this.value, event)"
+                               style="background: #000; color: #0ff; border: none; margin-left: 8px; font-family: 'Courier New', monospace; font-size: 16px; flex: 1;" />
+                    </div>
+                `;
+                
+                // Store pattern response in conversation history
+                patternConversations[basePattern].push({
+                    role: 'pattern',
+                    content: response.voice
+                });
+                
+            }).catch(error => {
+                console.error('Exploration error:', error);
+                const responseDiv = document.getElementById(`response-${timestamp}`);
+                if (responseDiv) {
+                    responseDiv.innerHTML = '<div style="color: #f00;">connection failed - try again</div>';
+                }
+            });
+        }
+
+        function handleNewPattern(pattern, event) {
+            if (!pattern.trim()) return;
+            
+            document.getElementById('input').value = pattern;
+            handleSubmit();
+        }
+
         function handleSubmit() {
             const input = document.getElementById('input');
-            const coordinate = input.value;
-            const conversation = document.getElementById('conversation');
+            const coordinate = input.value.trim();
+            const history = document.getElementById('history');
+
+            if (!coordinate) return;
+
+            // Auto-collapse all other open sections
+            collapseAllSections();
+
+            // Generate unique ID for this entry
+            const entryId = 'entry-' + Date.now();
             
-            if (!coordinate.trim()) return;
+            // Create history entry
+            const historyEntry = document.createElement('div');
+            historyEntry.className = 'history-entry';
+            historyEntry.innerHTML = `
+                <div class="coordinate-header" onclick="toggleEntry('${entryId}')">
+                    <span class="toggle-arrow" id="arrow-${entryId}">▼</span>
+                    <span class="coordinate-text">{${coordinate}}</span>
+                </div>
+                <div class="response-content" id="content-${entryId}">
+                    <div class="thinking">patterning...</div>
+                </div>
+            `;
             
-            // Add separator line
-            conversation.innerHTML += '<div class="separator-line"></div>';
-            
-            // Show user input
-            conversation.innerHTML += `<div class="prompt"><span class="prompt-symbol">>></span> <span class="pattern-name">{${coordinate}}</span></div>`;
-            
-            // Show thinking indicator
-            conversation.innerHTML += '<div id="thinking">potential in formation...</div>';
+            // Add to TOP of history (prepend)
+            history.insertBefore(historyEntry, history.firstChild);
             
             // Clear input
             input.value = '';
             
-            // Scroll to the conversation
-            setTimeout(() => {
-                conversation.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }, 100);
-            
-            engage(coordinate).then(response => {
-                // Remove thinking indicator
-                document.getElementById('thinking').remove();
-                
-                // Add AI response
+            // Engage with the pattern
+            engage(coordinate, 'jump').then(response => {
+                // Remove thinking indicator and add response
+                const contentDiv = document.getElementById(`content-${entryId}`);
                 const formattedVoice = formatPatternVoice(response.voice);
-                conversation.innerHTML += `<div class="voice-response">${formattedVoice}</div>`;
                 
-                // Scroll to bottom after response loads
-                setTimeout(() => {
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                }, 100);
+                // Initialize conversation history for this pattern
+                patternConversations[coordinate] = [{
+                    role: 'pattern',
+                    content: response.voice
+                }];
+                
+                const voiceToggleId = `voice-${entryId}`;
+
+                // Extract headline from voice response (first line)
+                const lines = response.voice.split('\n');
+                const voiceSummary = lines[0].trim() || response.voice.split(' ').slice(0, 6).join(' ') + '...';
+
+                // Extract pattern definitions and voice content
+                const fullResponse = response.voice;
+                let definitions = '';
+                let voiceContent = '';
+                let pastDefinitions = false;
+
+                const responseLines = fullResponse.split('\n');
+                for (let line of responseLines) {
+                    line = line.trim();
+                    if (!line) continue;
+
+                    // Skip headline
+                    if (line === responseLines[0].trim()) continue;
+
+                    // Pattern definitions
+                    if (line.includes(' - the intelligence of') || line.includes(' - where')) {
+                        definitions += line + '\n';
+                    }
+                    // Everything else is voice content
+                    else {
+                        pastDefinitions = true;
+                        voiceContent += line + '\n';
+                    }
+                }
+
+                console.log('Definitions:', definitions);
+                console.log('Voice content:', voiceContent);
+
+                const formattedDefinitions = formatPatternVoice(definitions);
+                const formattedVoiceContent = formatPatternVoice(voiceContent);
+
+                const specToggleId = `spec-${entryId}`;
+
+                // Add the formatted response with spec section and voice toggle
+                contentDiv.innerHTML = `
+                    <div style="margin-bottom: 8px;">
+                        <span style="color: #bbb; font-size: 16px; cursor: pointer;" onclick="toggleSpecResponse('${specToggleId}')">▼ Pattern Definition</span>
+                    </div>
+                    <div id="${specToggleId}" style="margin-bottom: 8px;">
+                        ${formattedDefinitions}
+                    </div>
+                    <div style="border-top: 1px solid #333; margin-bottom: 8px; padding-top: 8px;">
+                        <span style="color: #bbb; font-size: 16px; cursor: pointer;" onclick="toggleVoiceResponse('${voiceToggleId}')">▼ ${voiceSummary}</span>
+                    </div>
+                    <div id="${voiceToggleId}">
+                        <div style="border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px;">
+                            ${formattedVoiceContent}
+                        </div>
+                        <div style="display: flex; align-items: center; width: 100%;">
+                            <span style="color: #0ff;">>></span>
+                            <input type="text" placeholder="Continue exploring..."
+                                   onkeypress="if(event.key==='Enter') handleExploration('${coordinate}', this.value, event)"
+                                   style="background: #000; color: #0ff; border: none; margin-left: 8px; font-family: 'Courier New', monospace; font-size: 16px; flex: 1;" />
+                        </div>
+                    </div>
+                `;
                 
             }).catch(error => {
-                document.getElementById('thinking').innerHTML = "connection failed - try again";
+                const contentDiv = document.getElementById(`content-${entryId}`);
+                contentDiv.innerHTML = '<div style="color: #f00;">connection failed - try again</div>';
             });
         }
     </script>
