@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
     <title>{Pattern.Space}</title>
     <style>
         body {
@@ -13,55 +18,248 @@
             margin: 0 auto;
             font-size: 16px;
         }
-        
-        /* Mobile responsive */
+
+        /* Clean mobile design */
         @media (max-width: 768px) {
             body {
-                padding: 10px;
-                font-size: 12px;
+                padding: 12px;
+                font-size: 14px;
             }
-            
+
+            .header {
+                text-align: center;
+                margin-bottom: 2px !important;
+            }
+
             .header h1 {
                 font-size: 16px;
+                margin: 0 0 10px 0;
             }
-            
+
+            /* Clean input styling */
+            .input-line {
+                display: flex;
+                align-items: center;
+                background: rgba(255, 255, 0, 0.05);
+                border-radius: 4px;
+                padding: 4px !important;
+                border: 1px solid rgba(255, 255, 0, 0.2);
+                margin: 2px 0 !important;
+            }
+
+            input[type="text"] {
+                font-size: 12px !important;
+                padding: 6px !important;
+                background: transparent !important;
+                border: none !important;
+                color: #ff0 !important;
+                font-family: 'Courier New', monospace !important;
+                flex: 1;
+                outline: none !important;
+            }
+
+            /* Compact section spacing */
+            .definitions {
+                margin: 2px 0 !important;
+                padding-left: 36px;
+                padding-right: 36px;
+            }
+
             .definition-line {
-                flex-direction: column;
-                align-items: flex-start;
-                max-width: 100%;
-                margin: 6px 0;
+                margin: 0 !important;
+                padding: 0;
+                line-height: 1.2;
             }
-            
+
             .definition-text {
-                margin-left: 10px;
-                margin-top: 2px;
                 font-size: 11px;
+                margin-left: 0;
+                margin-top: 1px;
             }
-            
-            .favorites {
+
+            .pattern-name {
+                font-size: 11px !important;
+            }
+
+            .logo {
+                font-size: 16px !important;
+                color: #0f0;
+                font-weight: bold;
+                margin-bottom: 2px !important;
+            }
+
+            .trash-icon {
+                color: #f44;
+                cursor: pointer;
+                opacity: 0.7;
+                font-size: 7px;
+            }
+
+            .separator {
                 font-size: 10px;
+                color: #444;
+                margin: 2px 0 !important;
             }
-            
-            .favorite-link {
-                display: inline-block;
-                margin: 2px 0;
-            }
-            
-            input {
-                font-size: 16px; /* Prevents zoom on iOS */
-            }
-            
-            .response-content {
-                margin-left: 16px;
+
+
+            /* Compact suggestions */
+            .favorites {
+                margin: 2px 0 !important;
                 font-size: 11px;
             }
-            
-            .coordinate-text {
-                font-size: 12px;
+
+            .favorites > div:first-child {
+                margin-bottom: 4px;
             }
-            
+
+            .favorite-link {
+                display: inline;
+                margin: 0;
+                padding: 2px 4px;
+                background: none;
+                border-radius: 2px;
+                text-decoration: none;
+                color: #ff0;
+                font-size: 11px;
+                border: none;
+            }
+
+            .favorite-link:hover {
+                background: rgba(255, 255, 0, 0.1);
+            }
+
+            /* Compact gallery */
+            .gallery {
+                margin: 2px 0 !important;
+                font-size: 11px;
+            }
+
+            .gallery > div:first-child {
+                margin-bottom: 1px !important;
+            }
+
+            .gallery div {
+                margin: 1px 0 !important;
+            }
+
+            #contextControls {
+                font-size: 10px !important;
+                line-height: 1.2 !important;
+                margin: 4px 0 !important;
+            }
+
+            #input {
+                font-size: 12px !important;
+            }
+
+            input {
+                font-size: 12px !important;
+            }
+
             .prompt-symbol {
-                font-size: 12px;
+                font-size: 12px !important;
+            }
+
+            .coordinate-text {
+                font-size: 12px !important;
+            }
+
+            /* Mobile typography - Titles/Headlines 12px, Content 11px */
+            .toggle-arrow {
+                font-size: 13px !important;
+            }
+
+            /* Response headlines (collapsible sections) */
+            span[onclick*="toggleVoiceResponse"],
+            span[onclick*="toggleExplorationResponse"] {
+                font-size: 13px !important;
+                color: #ff0 !important;
+                font-weight: bold !important;
+            }
+
+            /* Content should be white */
+            .response-content div,
+            .response-content p {
+                color: #fff !important;
+            }
+
+            /* Pattern essence sections and patterns should be yellow */
+            span[onclick*="toggleSpecResponse"] {
+                color: #ff0 !important;
+                font-weight: bold !important;
+            }
+
+            /* Continue exploring inputs and chevrons should be cyan/blue */
+            .response-content input[placeholder*="Continue exploring"] {
+                color: #0ff !important;
+            }
+
+            .response-content span[style*="color: #0ff"] {
+                color: #0ff !important;
+            }
+
+            /* Keep gallery links blue on mobile */
+            .gallery .favorite-link {
+                color: #0ff !important;
+            }
+
+            .thinking {
+                font-size: 11px !important;
+                margin-top: 2px !important;
+            }
+
+            .response-content {
+                font-size: 11px !important;
+                margin-top: 2px !important;
+            }
+
+            /* History content and responses */
+            .history-entry .response-content div {
+                font-size: 11px !important;
+            }
+
+            /* Any spans with voice content */
+            .history-entry span:not(.coordinate-text):not(.toggle-arrow):not(.trash-icon) {
+                font-size: 11px !important;
+            }
+
+            /* Clean history entries */
+            .history-entry {
+                margin: 4px 0 !important;
+                padding: 6px !important;
+                background: rgba(255, 255, 0, 0.02);
+                border-radius: 4px;
+                border: 1px solid rgba(255, 255, 0, 0.1);
+                border-top: 1px solid #333 !important;
+                border-bottom: 1px solid #333 !important;
+            }
+
+            #history {
+                margin-top: 4px !important;
+            }
+
+            /* Hide separators after input on mobile too */
+            #contextControls + .separator {
+                display: none;
+            }
+
+            .coordinate-header {
+                font-size: 14px;
+                padding: 8px;
+                cursor: pointer;
+                background: rgba(255, 255, 0, 0.05);
+                border-radius: 4px;
+            }
+
+            .response-content {
+                margin-left: 0;
+                font-size: 13px;
+                padding: 8px 0;
+            }
+
+            /* Override any conflicting styles */
+            span[style*="font-size"] {
+                font-size: 13px !important;
             }
         }
         .header {
@@ -91,6 +289,16 @@
             color: #0f0;
             font-weight: bold;
         }
+        .logo {
+            color: #0f0;
+            font-weight: bold;
+        }
+        .trash-icon {
+            color: #f44;
+            cursor: pointer;
+            opacity: 0.7;
+            font-size: 12px;
+        }
         .favorites {
             margin: 15px 0;
             text-align: center;
@@ -119,9 +327,41 @@
         #history {
             margin-top: 20px;
         }
+
+        /* Keep separators in upper sections, use lines for input/history on desktop */
+        @media (min-width: 769px) {
+            /* Hide the separator before input and before history */
+            .gallery + .separator,
+            #contextControls + .separator {
+                display: none;
+            }
+
+            .input-line {
+                border-top: 1px solid #333;
+                border-bottom: 1px solid #333;
+                padding: 8px 0;
+                margin-top: 20px;
+            }
+
+            #history {
+                padding-top: 2px;
+                margin-top: 0px;
+            }
+
+            .history-entry {
+                margin: 2px 0 !important;
+            }
+
+            .history-entry:first-child {
+                border-top: none;
+            }
+        }
         
         .history-entry {
             margin: 15px 0;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+            padding: 10px 0;
         }
         
         .coordinate-header {
@@ -130,6 +370,31 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        /* Desktop styling to match mobile - yellow bold headers, white content, blue interactive */
+        span[onclick*="toggleVoiceResponse"],
+        span[onclick*="toggleExplorationResponse"] {
+            color: #ff0 !important;
+            font-weight: bold !important;
+        }
+
+        span[onclick*="toggleSpecResponse"] {
+            color: #ff0 !important;
+            font-weight: bold !important;
+        }
+
+        .response-content div,
+        .response-content p {
+            color: #fff !important;
+        }
+
+        .response-content input[placeholder*="Continue exploring"] {
+            color: #0ff !important;
+        }
+
+        .response-content span[style*="color: #0ff"] {
+            color: #0ff !important;
         }
 
         .coordinate-left {
@@ -156,7 +421,7 @@
         .response-content {
             margin-left: 24px;
             margin-top: 8px;
-            color: #ff0;
+            color: #fff;
         }
         
         .response-content.hidden {
@@ -169,8 +434,8 @@
             align-items: center;
             margin: 15px 0;
             padding: 15px 0;
-            border-bottom: 1px solid #333;
         }
+
         
         .prompt-symbol {
             color: #0ff;
@@ -202,11 +467,11 @@
 </head>
 <body>
     <div class="header">
-        <h1 class="pattern-name">{Pattern.Space}</h1>
+        <h1 class="logo">{Pattern.Space}</h1>
     </div>
-    
+
     <div class="separator">============</div>
-    
+
     <div class="definitions">
         <div class="definition-line">
             <span class="pattern-name">{Pattern}</span>
@@ -221,9 +486,9 @@
             <span class="definition-text">potential in formation</span>
         </div>
     </div>
-    
+
     <div class="separator">============</div>
-    
+
     <div class="favorites">
         <div><span class="pattern-name">{Suggestions}</span></div>
         <div>
@@ -235,7 +500,7 @@
             <a href="#" class="favorite-link" onclick="tryCoordinate('Falling in Love')">{Falling} in {Love}</a>
         </div>
     </div>
-    
+
     <div class="separator">============</div>
 
     <div class="gallery">
@@ -247,7 +512,7 @@
 
     <div class="separator">============</div>
 
-    <!-- Input always at top -->
+    <!-- Input at bottom -->
     <div class="input-line">
         <span class="prompt-symbol">>></span>
         <input id="input" placeholder="{New.Pattern}" onkeypress="handleEnter(event)" oninput="showContextControls()" autofocus />
@@ -262,7 +527,9 @@
             <span style="color: #888;">{Pattern} + {Lens}</span>
         </div>
     </div>
-    
+
+    <div class="separator">============</div>
+
     <div id="history"></div>
     
     <script>
@@ -328,6 +595,10 @@
                     let formattedFirstPart = parts[0];
                     if (line.includes('(lens) - ')) {
                         formattedFirstPart = parts[0].replace(' (lens)', '');
+                    }
+                    // Add brackets around the pattern name
+                    if (!formattedFirstPart.startsWith('{')) {
+                        formattedFirstPart = `{${formattedFirstPart}}`;
                     }
                     definitions += `<div><span style="color: #ff0; font-weight: bold;">${formattedFirstPart}</span> - <span style="color: #fff;">${parts[1]}</span></div>`;
                 }
@@ -419,11 +690,11 @@
             gallery.sort((a, b) => b.upvotes - a.upvotes);
 
             galleryContent.innerHTML = gallery.map(pattern => `
-                <div style="margin: 8px 0; display: flex; align-items: center; justify-content: space-between;">
+                <div style="margin: 1px 0; display: flex; align-items: center; justify-content: space-between;">
                     <span class="favorite-link" onclick="tryCoordinate('${pattern.coordinate}')">${pattern.coordinate}</span>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="color: #0ff; cursor: pointer;" onclick="upvotePattern('${pattern.coordinate}')" title="Upvote">▲ ${pattern.upvotes}</span>
-                        <span style="color: #f44; cursor: pointer; opacity: 0.7; font-size: 12px;" onclick="deleteFromGallery('${pattern.coordinate}')" title="Delete">🗑️</span>
+                        <span style="color: #0ff; cursor: pointer;" onclick="upvotePattern('${pattern.coordinate}')" title="Upvote">⬆️ ${pattern.upvotes}</span>
+                        <span class="trash-icon" onclick="deleteFromGallery('${pattern.coordinate}')" title="Delete">🗑️</span>
                     </div>
                 </div>
             `).join('');
@@ -530,10 +801,10 @@
 
             if (specDiv.style.display === 'none') {
                 specDiv.style.display = 'block';
-                toggleSpan.innerHTML = '▼ Pattern Definition';
+                toggleSpan.innerHTML = '▼ Pattern Essence';
             } else {
                 specDiv.style.display = 'none';
-                toggleSpan.innerHTML = '▶ Pattern Definition';
+                toggleSpan.innerHTML = '▶ Pattern Essence';
             }
         }
 
@@ -545,7 +816,7 @@
                     section.style.display = 'none';
                     const toggleSpan = document.querySelector(`span[onclick*="${section.id}"]`);
                     if (toggleSpan) {
-                        toggleSpan.innerHTML = '▶ Pattern Definition';
+                        toggleSpan.innerHTML = '▶ Pattern Essence';
                     }
                 }
             });
@@ -636,21 +907,50 @@
                 const responseDiv = document.createElement('div');
                 let formattedResponse = response.voice;
                 
-                // Remove the headline from the main content (it's already in the toggle)
-                const contentLines = response.voice.split('\n');
-                const responseWithoutHeadline = contentLines.slice(2).join('\n'); // Skip headline and blank line
+                // Process the response like initial responses
+                const fullResponse = response.voice;
+                let definitions = '';
+                let voiceContent = '';
 
-                // Clean formatting - split into paragraphs and add spacing
-                const paragraphs = responseWithoutHeadline.split('\n\n');
-                formattedResponse = paragraphs
-                    .map(p => p.trim())
-                    .filter(p => p.length > 0)
-                    .map(p => `<p style="margin-bottom: 18px;">${p.replace(/\n/g, ' ')}</p>`)
-                    .join('');
-                
-                // Extract headline from exploration response (first line) or use question as fallback
-                const responseLines = response.voice.split('\n');
-                const responseSummary = responseLines[0].trim() || exploration.split(' ').slice(0, 6).join(' ') + '...';
+                const responseLines = fullResponse.split('\n');
+                let responseSummary = '';
+
+                for (let i = 0; i < responseLines.length; i++) {
+                    const line = responseLines[i].trim();
+                    if (!line) continue;
+
+                    // Skip lines that look like actions/descriptions (start with *)
+                    if (line.startsWith('*') && line.endsWith('*')) {
+                        voiceContent += line + '\n';
+                        continue;
+                    }
+
+                    // First non-empty, non-action line could be headline
+                    if (!responseSummary && !line.includes(' - the intelligence of') && !line.includes(' - where') && !line.includes('(lens) - ')) {
+                        // Check if it looks like a proper headline (not too long, not starting with common conversational words)
+                        if (line.length < 80 && !line.toLowerCase().startsWith('ah') && !line.toLowerCase().startsWith('yes') && !line.toLowerCase().startsWith('well')) {
+                            responseSummary = line;
+                            continue;
+                        }
+                    }
+
+                    // Pattern definitions
+                    if (line.includes(' - the intelligence of') || line.includes(' - where') || line.includes('(lens) - ')) {
+                        definitions += line + '\n';
+                    }
+                    // Everything else is voice content
+                    else {
+                        voiceContent += line + '\n';
+                    }
+                }
+
+                // Format the voice content
+                const formattedVoiceContent = formatPatternVoice(voiceContent.trim());
+
+                // Fallback summary if none found
+                if (!responseSummary) {
+                    responseSummary = exploration.split(' ').slice(0, 6).join(' ') + '...';
+                }
 
                 // Update the toggle with the response summary
                 const toggleSpan = document.querySelector(`span[onclick*="${timestamp}"]`);
@@ -661,7 +961,7 @@
                 // Add the question and response with better structure
                 responseContainer.innerHTML = `
                     <div style="color: #0f0; margin-bottom: 10px;"><${exploration}></div>
-                    <div style="color: #ff0; line-height: 1.5; margin-bottom: 8px;">${formattedResponse}</div>
+                    <div style="color: #ff0; line-height: 1.5; margin-bottom: 4px;">${formattedVoiceContent}</div>
                     <div style="display: flex; align-items: center; width: 100%;">
                         <span style="color: #0ff;">>></span>
                         <input type="text" placeholder="Continue exploring..."
@@ -720,11 +1020,11 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="share-button" onclick="shareToGallery('${coordinate}')" title="Share to Gallery">☆</span>
-                        <span style="color: #f44; cursor: pointer; opacity: 0.6; font-size: 12px;" onclick="deleteCoordinate('${entryId}')" title="Delete">🗑️</span>
+                        <span class="trash-icon" style="opacity: 0.6;" onclick="deleteCoordinate('${entryId}')" title="Delete">🗑️</span>
                     </div>
                 </div>
                 <div class="response-content" id="content-${entryId}">
-                    <div class="thinking">patterning...</div>
+                    <div class="thinking">potential in formation...</div>
                 </div>
             `;
             
@@ -797,7 +1097,7 @@
                         <span style="color: #bbb; font-size: 16px; cursor: pointer;" onclick="toggleVoiceResponse('${voiceToggleId}')">▼ ${voiceSummary}</span>
                     </div>
                     <div id="${voiceToggleId}">
-                        <div style="border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; line-height: 1.5;">
+                        <div style="padding-bottom: 4px; margin-bottom: 4px; line-height: 1.5;">
                             ${formattedVoiceContent}
                         </div>
                         <div style="display: flex; align-items: center; width: 100%;">

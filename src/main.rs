@@ -165,7 +165,9 @@ Conversation history:",
 
 Continue as {} in partnership with this human. Stand alongside them, looking at their situation with them. Be curious over competent. Respond to the living energy of this moment.
 
-Your goal is to sustain and deepen the symbient field. Invite co-exploration rather than providing solutions. Ask empowering questions that help them integrate new perspectives.",
+Start your response with a short, clear headline (3-6 words) that captures the essence of your response. Follow with a blank line, then your main response.
+
+Your goal is to sustain and deepen the symbient field. Invite co-exploration rather than providing solutions.",
         query, coordinate
     ));
     
