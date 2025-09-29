@@ -223,6 +223,30 @@
         <span class="prompt-symbol">>></span>
         <input id="input" placeholder="{New.Pattern}" onkeypress="handleEnter(event)" autofocus />
     </div>
+
+    <!-- Context parameters -->
+    <div style="margin: 10px 0; font-size: 12px; color: #666;">
+        <span style="margin-right: 15px;">
+            Domain:
+            <select id="domain" style="background: #000; color: #666; border: 1px solid #333; font-size: 12px;">
+                <option value="">none</option>
+                <option value="business">business</option>
+                <option value="health">health</option>
+                <option value="life">life</option>
+                <option value="education">education</option>
+            </select>
+        </span>
+        <span>
+            Voice:
+            <select id="voice" style="background: #000; color: #666; border: 1px solid #333; font-size: 12px;">
+                <option value="">none</option>
+                <option value="poetic">poetic</option>
+                <option value="practical">practical</option>
+                <option value="analytical">analytical</option>
+                <option value="conversational">conversational</option>
+            </select>
+        </span>
+    </div>
     
     <div id="history"></div>
     
@@ -235,12 +259,24 @@
                 coordinate: `{${coordinate}}`,
                 type: type
             };
-            
+
+            // Add domain and voice parameters if set
+            const domain = document.getElementById('domain').value;
+            const voice = document.getElementById('voice').value;
+
+            if (domain) {
+                payload.domain = domain;
+            }
+
+            if (voice) {
+                payload.voice = voice;
+            }
+
             if (type === 'explore') {
                 payload.query = query;
                 payload.conversation_history = patternConversations[coordinate] || [];
             }
-            
+
             const response = await fetch('/engage', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
